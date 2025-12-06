@@ -43,7 +43,7 @@ def load_signal(filename='data5.mat'):
     return signal
 
 
-def lms_predictor(signal, order=2, mu=0.001, num_iterations=None):
+def lms_predictor(signal, order=2, mu=0.0001, num_iterations=None):
     """
     2nd-order LMS (Least Mean Squares) predictor.
     
@@ -119,7 +119,7 @@ def rls_predictor(signal, order=2, lambda_factor=0.99, delta=100.0, num_iteratio
     weights = np.zeros(order, dtype=signal.dtype)
     
     # Initialize inverse correlation matrix P (larger delta for stability with complex signals)
-    P = np.eye(order, dtype=np.complex128) * delta
+    P = np.eye(order, dtype=signal.dtype) * delta
     
     # Storage for history
     weights_history = np.zeros((num_iterations, order), dtype=signal.dtype)
@@ -145,7 +145,8 @@ def rls_predictor(signal, order=2, lambda_factor=0.99, delta=100.0, num_iteratio
         # Compute gain vector using proper RLS formula for complex signals
         Px = np.dot(P, np.conj(x))
         denominator = lambda_factor + np.dot(x, Px)
-        k = Px / denominator
+        # Add small regularization to prevent numerical instability
+        k = Px / (denominator + 1e-8)
         
         # Update weights
         weights = weights + k * e
